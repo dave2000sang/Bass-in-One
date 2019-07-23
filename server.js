@@ -20,6 +20,6 @@ app.get('/stream/:videoId', (req, res) => {
 	}
 })
 
-app.listen(5000, function() {
-    console.log('Server running on port 5000');
+app.listen(3000, function() {
+    console.log('Server running on port 3000');
 })
