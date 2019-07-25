@@ -23,12 +23,13 @@ function initClickHandlers() {
 
 	equalizer.addEventListener('change', function() {
 		biquadFilter.gain.value = equalizer.value;
+		console.log(biquadFilter.gain.value)
 	})
 }
 
 function loadSound() {
 	var request = new XMLHttpRequest()
-	request.open("GET", "http://localhost:3000/stream/QuJGPMFGvKI", true)
+	request.open("GET", "http://localhost:3000/stream/Q5mnjmiRLrk", true)
 	request.responseType = "arraybuffer"
 
 	request.onload = function() {
