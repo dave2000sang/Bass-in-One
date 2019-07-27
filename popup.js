@@ -2,6 +2,7 @@
 class BoostUI {
 	constructor() {
 		this.tabId = null
+		this.isBoosted = false
 		this.init()
 	}
 	init() {
@@ -10,11 +11,16 @@ class BoostUI {
 	  }.bind(this))
 
 	  // toggle bass boost listener
-	  var toggle_button = document.getElementById("toggle_button")
-	  // console.log(toggle_button)
-		toggle_button.addEventListener('click', (e) => {
+	  var toggleButton = document.getElementById("toggleButton")
+		toggleButton.addEventListener('click', (e) => {
+			this.isBoosted = !this.isBoosted
+			if (this.isBoosted) {
+				toggleButton.innerHTML = "Off"
+			} else {
+				toggleButton.innerHTML = "Boost"
+			}
 			this.boostTab()
-			console.log('toggle button clicked, tabId = ' + this.curTabId)
+			// console.log('toggle button clicked')
 		})
 	}
 
