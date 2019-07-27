@@ -6,20 +6,32 @@ class Background {
 		this.source = null
 		this.biquad = null
 		this.stream = null
+		this.isBoosted = false
 	}
 
 	initBoost(stream) {
 		this.context = this.getContext()
 		this.source = this.getSource(stream)
 		this.biquad = this.getBiquad()
+		this.biquad.type = "lowshelf"
+		this.biquad.frequency.value = 400	// hardcoded for now
 
 		// connect source -> biquad -> destination
 		this.source.connect(this.biquad)
 		this.biquad.connect(this.context.destination)
 	}
 
+	resetBoost() {
+		this.context = null
+		this.source = null
+		this.biquad = null
+		this.stream = null
+		this.isBoosted = false
+		console.log("RESET")
+	}
+
 	boostTab(value) {
-		chrome.tabs.query({ active: true }, function (tabs) {
+		// chrome.tabs.query({ active: true }, function (tabs) {
 			chrome.tabCapture.capture({audio: true}, (response) => {
 				if (background.stream !== null) {
 					background.boost(background.stream, value)
@@ -27,21 +39,31 @@ class Background {
 					background.stream = response
 					background.boost(background.stream, value)
 				} else {
-					chrome.runtime.sendMessage({
-						subject: "Tab No Audio"
-					})
+					alert("No Audio")
 				}
 			})
-		})
+		// })
 	}
 
 	boost(stream, value) {
 		this.initBoost(stream)
 		this.updateBiquadGain(value)
+		this.isBoosted = true
 	}
 
-	updateBiquadGain(gain) {
+	stopBoost(stream) {
+		this.initBoost(stream)
+		this.updateBiquadGain(0)
+		console.log("outside callback")
+		stream.getTracks()[0].stop()
+		this.source = null
+		this.stream = null
+		this.isBoosted = false
+	}
+
+	updateBiquadGain(gain, callback) {
 		background.biquad.gain.value = gain
+		console.log(callback)
 	}
 
 	getContext() {
@@ -66,15 +88,23 @@ class Background {
 	}
 }
 
+// listener for popup events
 chrome.runtime.onMessage.addListener((message) => {
-	console.log("message received" + message)
+	console.log("message: " + message.action)
 	background.tabId = message.tabId
 	switch(message.action) {
 		case "toggleBoost":
+			if (background.stream !== null) {
+				background.boost(background.stream, message.value)
+			}
 			background.boostTab(message.value)
 			break
+		case "stopBoost":
+			background.stopBoost(background.stream)
+			background.resetBoost()
+			break
 		default:
-			console.log("Error, message did not match")
+			console.log("Error message did not match")
 	}
 })
 

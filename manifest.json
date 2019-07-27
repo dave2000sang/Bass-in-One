@@ -2,7 +2,7 @@
 	"name": "Bass in One",
 	"description": "Bass it up",
 	"version": "1.0",
-	"permissions": ["declarativeContent", "activeTab", "tabCapture", "tabs"],
+	"permissions": ["*://*/*", "activeTab", "tabCapture", "tabs"],
 	"background": {
 		"scripts": ["background.js"],
 		"persistent": false

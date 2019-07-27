@@ -13,14 +13,12 @@ class BoostUI {
 	  // toggle bass boost listener
 	  var toggleButton = document.getElementById("toggleButton")
 		toggleButton.addEventListener('click', (e) => {
-			this.isBoosted = !this.isBoosted
 			if (this.isBoosted) {
-				toggleButton.innerHTML = "Off"
+				this.stopBoost()
 			} else {
-				toggleButton.innerHTML = "Boost"
+				this.boostTab()
 			}
-			this.boostTab()
-			// console.log('toggle button clicked')
+			this.isBoosted = !this.isBoosted
 		})
 	}
 
@@ -29,7 +27,20 @@ class BoostUI {
 			action: "toggleBoost",
 			tabId: this.curTabId,
 			value: document.getElementById("equalizer").value
-		})
+			}, () => {
+				document.getElementById("toggleButton").innerHTML = "Off"
+			}
+		)
+	}
+
+	stopBoost() {
+		chrome.runtime.sendMessage({
+			action: "stopBoost",
+			tabId: this.curTabId
+		}, () => {
+				document.getElementById("toggleButton").innerHTML = "Boost"
+			}
+		)
 	}
 }
 
