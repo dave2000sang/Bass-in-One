@@ -5,6 +5,7 @@ class BoostUI {
 		this.isBoosted = false
 		this.init()
 	}
+	
 	init() {
 	  chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
 	  	this.curTabId = tabs[0].id
@@ -12,21 +13,42 @@ class BoostUI {
 
 	  // toggle bass boost listener
 	  var toggleButton = document.getElementById("toggleButton")
+		var eq = document.getElementById("equalizer")
+		var eqPass = document.getElementById("lowpassEQ")
+		var shelfVal = document.getElementById("shelfVal")
+		var passVal = document.getElementById("passVal")
+
 		toggleButton.addEventListener('click', (e) => {
 			if (this.isBoosted) {
 				this.stopBoost()
 			} else {
-				this.boostTab()
+				this.boostTab(eq.value, "shelf")
 			}
 			this.isBoosted = !this.isBoosted
 		})
+
+		eq.addEventListener('change', (e) => {
+			this.boostTab(eq.value, "shelf")
+			shelfVal.innerHTML = eq.value
+		})
+
+		eqPass.addEventListener('change', (e) => {
+			this.boostTab(eqPass.value, "pass")
+			passVal.innerHTML = eqPass.value
+		})
 	}
 
-	boostTab() {
+	boostTab(val, type) {
+		var action = "";
+		if (type === "shelf") {
+			action = "toggleBoost"
+		} else {
+			action = "togglePass"
+		}
 		chrome.runtime.sendMessage({
-			action: "toggleBoost",
+			action: action,
 			tabId: this.curTabId,
-			value: document.getElementById("equalizer").value
+			value: val
 			}, () => {
 				document.getElementById("toggleButton").innerHTML = "Off"
 			}

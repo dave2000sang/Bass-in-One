@@ -5,6 +5,7 @@ class Background {
 		this.tabId = null
 		this.source = null
 		this.biquad = null
+		this.lowpass = null
 		this.stream = null
 		this.isBoosted = false
 	}
@@ -13,31 +14,40 @@ class Background {
 		this.context = this.getContext()
 		this.source = this.getSource(stream)
 		this.biquad = this.getBiquad()
-		this.biquad.type = "lowshelf"
-		this.biquad.frequency.value = 400	// hardcoded for now
+
+		// init lowpass biquad filter
+		this.lowpass = this.getLowpass()
 
 		// connect source -> biquad -> destination
 		this.source.connect(this.biquad)
-		this.biquad.connect(this.context.destination)
+		this.biquad.connect(this.lowpass)
+		this.lowpass.connect(this.context.destination)
 	}
 
 	resetBoost() {
 		this.context = null
 		this.source = null
 		this.biquad = null
+		this.lowpass = null
 		this.stream = null
 		this.isBoosted = false
-		console.log("RESET")
 	}
 
-	boostTab(value) {
+	boostTab(value, type) {
+		var boostFunction = null
+		if (type === "toggleBoost") {
+			boostFunction = this.boost.bind(this)
+		} else {
+			boostFunction = this.boostPass.bind(this)
+		}
+		// console.log(boostFunction)
 		// chrome.tabs.query({ active: true }, function (tabs) {
 			chrome.tabCapture.capture({audio: true}, (response) => {
-				if (background.stream !== null) {
-					background.boost(background.stream, value)
+				if (this.stream !== null) {
+					boostFunction(this.stream, value)
 				} else if (response !== null) {
-					background.stream = response
-					background.boost(background.stream, value)
+					this.stream = response
+					boostFunction(this.stream, value)
 				} else {
 					alert("No Audio")
 				}
@@ -46,24 +56,32 @@ class Background {
 	}
 
 	boost(stream, value) {
+		console.log(this)
 		this.initBoost(stream)
 		this.updateBiquadGain(value)
 		this.isBoosted = true
 	}
 
+	boostPass(stream, value) {
+		this.initBoost(stream)
+		this.updatePassGain(value)
+	}
+
 	stopBoost(stream) {
 		this.initBoost(stream)
 		this.updateBiquadGain(0)
-		console.log("outside callback")
-		stream.getTracks()[0].stop()
+		stream.getTracks()[0].stop()		// stop mediastream track
 		this.source = null
 		this.stream = null
 		this.isBoosted = false
 	}
 
-	updateBiquadGain(gain, callback) {
-		background.biquad.gain.value = gain
-		console.log(callback)
+	updateBiquadGain(gain) {
+		this.biquad.gain.value = gain
+	}
+
+	updatePassGain(freq) {
+		this.lowpass.frequency.value = freq
 	}
 
 	getContext() {
@@ -83,8 +101,19 @@ class Background {
 	getBiquad() {
 		if (this.biquad === null) {
 			this.biquad = this.getContext().createBiquadFilter()
+			this.biquad.type = "lowshelf"
+			this.biquad.frequency.value = 400	// hardcoded for now
 		}
 		return this.biquad
+	}
+
+	getLowpass() {
+		if (this.lowpass === null) {
+			this.lowpass = this.getContext().createBiquadFilter()
+			this.lowpass.type = "lowpass"
+			this.lowpass.Q.value = "1"
+		}
+		return this.lowpass
 	}
 }
 
@@ -97,7 +126,10 @@ chrome.runtime.onMessage.addListener((message) => {
 			if (background.stream !== null) {
 				background.boost(background.stream, message.value)
 			}
-			background.boostTab(message.value)
+			background.boostTab(message.value, "toggleBoost")
+			break
+		case "togglePass":
+			background.boostTab(message.value, "togglePass")
 			break
 		case "stopBoost":
 			background.stopBoost(background.stream)
