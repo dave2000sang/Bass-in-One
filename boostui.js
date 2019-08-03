@@ -17,6 +17,8 @@ class BoostUI {
 		var eqPass = document.getElementById("lowpassEQ")
 		var shelfVal = document.getElementById("shelfVal")
 		var passVal = document.getElementById("passVal")
+		var speed = document.getElementById("toggleSpeed")
+
 
 		toggleButton.addEventListener('click', (e) => {
 			if (this.isBoosted) {
@@ -35,6 +37,10 @@ class BoostUI {
 		eqPass.addEventListener('change', (e) => {
 			this.boostTab(eqPass.value, "pass")
 			passVal.innerHTML = eqPass.value
+		})
+
+		speed.addEventListener('click', (e) => {
+			this.setSpeed(0.5)
 		})
 	}
 
@@ -63,6 +69,13 @@ class BoostUI {
 				document.getElementById("toggleButton").innerHTML = "Boost"
 			}
 		)
+	}
+
+	setSpeed() {
+		chrome.runtime.sendMessage({
+			action: "setSpeed",
+			tabId: this.curTabId
+		})
 	}
 }
 

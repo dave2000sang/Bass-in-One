@@ -76,6 +76,14 @@ class Background {
 		this.isBoosted = false
 	}
 
+	setSpeed(speed) {
+		if (this.source !== null) {
+			this.source.playbackRate = speed
+		} else {
+			console.log("Cannot change speed - source is null")
+		}
+	}
+
 	updateBiquadGain(gain) {
 		this.biquad.gain.value = gain
 	}
@@ -134,6 +142,9 @@ chrome.runtime.onMessage.addListener((message) => {
 		case "stopBoost":
 			background.stopBoost(background.stream)
 			background.resetBoost()
+			break
+		case "setSpeed":
+			background.setSpeed(message.value)
 			break
 		default:
 			console.log("Error message did not match")

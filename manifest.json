@@ -14,5 +14,10 @@
 			"32": "images/icon32.png"
 		}
 	},
+	"content_scripts": [{
+		"all_frames": true,
+		"matches": ["http://www.youtube.com/*", "https://www.youtube.com/*"],
+		"js": ["speed.js"]
+	}],
 	"manifest_version": 2
 }
