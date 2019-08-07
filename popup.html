@@ -4,15 +4,23 @@
 		<script src="boostui.js"></script>
 	</head>
 	<body>
-		<button id="toggleButton">Boost</button> <br/>
-		Lowshelf (gain):
-		<input type="range" min="1" max="40" value ="10" step="0.5" id="equalizer"><br/>
-		Lowpass (freq):
-		<input type="range" min="0" max="2000" value="100" step="10" id="lowpassEQ"><br/>
-		<p>shelf: <span id="shelfVal"></span></p>
-		<p>val: <span id="passVal"></span></p>
-
-		<button id="toggleSpeed">Speed</button>		
-
+		<div id="equalizers">
+			<input type="range" min="-40" max="40" value="0" step="1" class="eq" id="eq0">
+			<input type="range" min="-40" max="40" value="0" step="1" class="eq" id="eq1">		
+			<input type="range" min="-40" max="40" value="0" step="1" class="eq" id="eq2">	
+			<input type="range" min="-40" max="40" value="0" step="1" class="eq" id="eq3">	
+			<input type="range" min="-40" max="40" value="0" step="1" class="eq" id="eq4">	
+			<input type="range" min="-40" max="40" value="0" step="1" class="eq" id="eq5">	
+			<input type="range" min="-40" max="40" value="0" step="1" class="eq" id="eq6">	
+		</div>
+		<div>
+			<button id="toggleButton">Boost</button> <br/>
+			Lowshelf (gain):
+			<input type="range" min="1" max="40" value ="10" step="0.5" id="equalizer"><br/>
+			Lowpass (freq):
+			<input type="range" min="0" max="2000" value="100" step="10" id="lowpassEQ"><br/>
+			<p>shelf: <span id="shelfVal"></span></p>
+			<p>val: <span id="passVal"></span></p>
+		</div>
 	</body>
 </html>

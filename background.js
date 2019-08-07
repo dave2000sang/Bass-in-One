@@ -4,7 +4,7 @@ class Background {
 		this.context = null
 		this.tabId = null
 		this.source = null
-		this.biquad = null
+		this.biquadNodes = []
 		this.lowpass = null
 		this.stream = null
 		this.isBoosted = false
@@ -13,27 +13,30 @@ class Background {
 	initBoost(stream) {
 		this.context = this.getContext()
 		this.source = this.getSource(stream)
-		this.biquad = this.getBiquad()
+		this.biquadNodes = this.getBiquadNodes()
 
 		// init lowpass biquad filter
 		this.lowpass = this.getLowpass()
 
-		// connect source -> biquad -> destination
-		this.source.connect(this.biquad)
-		this.biquad.connect(this.lowpass)
+		// connect source -> biquad nodes -> destination
+		this.source.connect(this.biquadNodes[0])
+		for (var i = 0; i < this.biquadNodes.length - 1; i++) {
+			this.biquadNodes[i].connect(this.biquadNodes[i+1])
+		}
+		this.biquadNodes[this.biquadNodes.length-1].connect(this.lowpass)
 		this.lowpass.connect(this.context.destination)
 	}
 
 	resetBoost() {
 		this.context = null
 		this.source = null
-		this.biquad = null
+		this.biquadNodes = []
 		this.lowpass = null
 		this.stream = null
 		this.isBoosted = false
 	}
 
-	boostTab(value, type) {
+	boostTab(value, type, eqIndex) {
 		var boostFunction = null
 		if (type === "toggleBoost") {
 			boostFunction = this.boost.bind(this)
@@ -44,10 +47,10 @@ class Background {
 		// chrome.tabs.query({ active: true }, function (tabs) {
 			chrome.tabCapture.capture({audio: true}, (response) => {
 				if (this.stream !== null) {
-					boostFunction(this.stream, value)
+					boostFunction(this.stream, value, eqIndex)
 				} else if (response !== null) {
 					this.stream = response
-					boostFunction(this.stream, value)
+					boostFunction(this.stream, value, eqIndex)
 				} else {
 					alert("No Audio")
 				}
@@ -55,37 +58,28 @@ class Background {
 		// })
 	}
 
-	boost(stream, value) {
-		console.log(this)
+	boost(stream, value, eqIndex) {
 		this.initBoost(stream)
-		this.updateBiquadGain(value)
+		this.updateBiquadGain(value, eqIndex)
 		this.isBoosted = true
 	}
 
-	boostPass(stream, value) {
+	boostPass(stream, value, eqIndex) {
 		this.initBoost(stream)
-		this.updatePassGain(value)
+		this.updatePassGain(value, eqIndex)
 	}
 
 	stopBoost(stream) {
 		this.initBoost(stream)
-		this.updateBiquadGain(0)
+		// this.updateBiquadGain(0)
 		stream.getTracks()[0].stop()		// stop mediastream track
 		this.source = null
 		this.stream = null
 		this.isBoosted = false
 	}
-
-	setSpeed(speed) {
-		if (this.source !== null) {
-			this.source.playbackRate = speed
-		} else {
-			console.log("Cannot change speed - source is null")
-		}
-	}
-
-	updateBiquadGain(gain) {
-		this.biquad.gain.value = gain
+	updateBiquadGain(gain, index) {
+		console.log(`gain = ${gain}, index = ${index}`)
+		this.biquadNodes[index].gain.value = gain
 	}
 
 	updatePassGain(freq) {
@@ -106,13 +100,19 @@ class Background {
 		return this.source
 	}
 
-	getBiquad() {
-		if (this.biquad === null) {
-			this.biquad = this.getContext().createBiquadFilter()
-			this.biquad.type = "lowshelf"
-			this.biquad.frequency.value = 400	// hardcoded for now
+	getBiquadNodes() {
+		if (this.biquadNodes === undefined || this.biquadNodes.length == 0) {
+			const freqValues = [60, 150, 250, 500, 1000, 3000, 8000]
+			var biquadNodes = []
+			freqValues.forEach((item, index) => {
+				var node = this.getContext().createBiquadFilter()
+				node.type = "peaking"
+				node.frequency.value = item
+				biquadNodes.push(node)
+			})
+			this.biquadNodes = biquadNodes
 		}
-		return this.biquad
+		return this.biquadNodes
 	}
 
 	getLowpass() {
@@ -132,24 +132,20 @@ chrome.runtime.onMessage.addListener((message) => {
 	switch(message.action) {
 		case "toggleBoost":
 			if (background.stream !== null) {
-				background.boost(background.stream, message.value)
+				background.boost(background.stream, message.value, message.eqIndex)
 			}
-			background.boostTab(message.value, "toggleBoost")
+			background.boostTab(message.value, "toggleBoost", message.eqIndex)
 			break
 		case "togglePass":
-			background.boostTab(message.value, "togglePass")
+			background.boostTab(message.value, "togglePass", message.eqIndex)
 			break
 		case "stopBoost":
 			background.stopBoost(background.stream)
 			background.resetBoost()
 			break
-		case "setSpeed":
-			background.setSpeed(message.value)
-			break
 		default:
 			console.log("Error message did not match")
 	}
 })
-
 
 const background = new Background()

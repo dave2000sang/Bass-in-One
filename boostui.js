@@ -17,8 +17,15 @@ class BoostUI {
 		var eqPass = document.getElementById("lowpassEQ")
 		var shelfVal = document.getElementById("shelfVal")
 		var passVal = document.getElementById("passVal")
-		var speed = document.getElementById("toggleSpeed")
 
+		// equalizers event listener
+		const equalizers = document.getElementById("equalizers")
+		equalizers.addEventListener('change', (e) => {
+			if(e.target.className == "eq") {
+				this.boostTab(e.target.value, "shelf", e.target.id.split("eq")[1])
+				console.log(e.target)
+			}
+		})
 
 		toggleButton.addEventListener('click', (e) => {
 			if (this.isBoosted) {
@@ -39,12 +46,9 @@ class BoostUI {
 			passVal.innerHTML = eqPass.value
 		})
 
-		speed.addEventListener('click', (e) => {
-			this.setSpeed(0.5)
-		})
 	}
 
-	boostTab(val, type) {
+	boostTab(val, type, eqIndex=2) {
 		var action = "";
 		if (type === "shelf") {
 			action = "toggleBoost"
@@ -54,7 +58,8 @@ class BoostUI {
 		chrome.runtime.sendMessage({
 			action: action,
 			tabId: this.curTabId,
-			value: val
+			value: val,
+			eqIndex: eqIndex
 			}, () => {
 				document.getElementById("toggleButton").innerHTML = "Off"
 			}
@@ -69,13 +74,6 @@ class BoostUI {
 				document.getElementById("toggleButton").innerHTML = "Boost"
 			}
 		)
-	}
-
-	setSpeed() {
-		chrome.runtime.sendMessage({
-			action: "setSpeed",
-			tabId: this.curTabId
-		})
 	}
 }
 
