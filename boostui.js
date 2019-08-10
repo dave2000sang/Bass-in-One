@@ -11,11 +11,10 @@ class BoostUI {
 	  	this.curTabId = tabs[0].id
 	  }.bind(this))
 
-	  // toggle bass boost listener
+	  // listeners
 	  var toggleButton = document.getElementById("toggleButton")
-		var eq = document.getElementById("equalizer")
+		var resetButton = document.getElementById("resetButton")
 		var eqPass = document.getElementById("lowpassEQ")
-		var shelfVal = document.getElementById("shelfVal")
 		var passVal = document.getElementById("passVal")
 
 		// equalizers event listener
@@ -29,16 +28,19 @@ class BoostUI {
 
 		toggleButton.addEventListener('click', (e) => {
 			if (this.isBoosted) {
-				this.stopBoost()
+				eqPass.disabled = true
+				toggleButton.innerHTML = "On"
+				// this.stopBoost()
 			} else {
-				this.boostTab(eq.value, "shelf")
+				eqPass.disabled = false
+				toggleButton.innerHTML = "Off"
+				this.boostTab(eqPass.value, "pass")
 			}
 			this.isBoosted = !this.isBoosted
 		})
 
-		eq.addEventListener('change', (e) => {
-			this.boostTab(eq.value, "shelf")
-			shelfVal.innerHTML = eq.value
+		resetButton.addEventListener('click', (e) => {
+			this.reset()
 		})
 
 		eqPass.addEventListener('change', (e) => {
@@ -46,6 +48,27 @@ class BoostUI {
 			passVal.innerHTML = eqPass.value
 		})
 
+	}
+
+	buttonToggle() {
+		var toggleButton = document.getElementById("toggleButton")
+		switch (this.isBoosted) {
+			case true:
+				toggleButton.innerHTML = "Off"
+				break
+			case false:
+				toggleButton.innerHTML = "Boost"
+				break
+			default:
+		}
+	}
+
+	resetEQ() {
+		var equalizers = document.getElementById("equalizers").children
+		equalizers = Array.from(equalizers)
+		equalizers.forEach((eq) => {
+			eq.value = 0
+		})
 	}
 
 	boostTab(val, type, eqIndex=2) {
@@ -60,19 +83,24 @@ class BoostUI {
 			tabId: this.curTabId,
 			value: val,
 			eqIndex: eqIndex
-			}, () => {
-				document.getElementById("toggleButton").innerHTML = "Off"
 			}
 		)
+	}
+
+	reset() {
+		chrome.runtime.sendMessage({
+			action: "reset",
+			tabId: this.curTabId
+		}, () => {
+			this.resetEQ()
+		})
 	}
 
 	stopBoost() {
 		chrome.runtime.sendMessage({
 			action: "stopBoost",
 			tabId: this.curTabId
-		}, () => {
-				document.getElementById("toggleButton").innerHTML = "Boost"
-			}
+		}
 		)
 	}
 }

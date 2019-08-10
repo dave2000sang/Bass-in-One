@@ -70,6 +70,7 @@ class Background {
 	}
 
 	stopBoost(stream) {
+		if (stream == null) return
 		this.initBoost(stream)
 		// this.updateBiquadGain(0)
 		stream.getTracks()[0].stop()		// stop mediastream track
@@ -106,7 +107,13 @@ class Background {
 			var biquadNodes = []
 			freqValues.forEach((item, index) => {
 				var node = this.getContext().createBiquadFilter()
-				node.type = "peaking"
+				if (index == 0) {
+					node.type = "lowshelf"
+				} else if (index == freqValues.length - 1) {
+					node.type = "highshelf"
+				} else {
+					node.type = "peaking"
+				}
 				node.frequency.value = item
 				biquadNodes.push(node)
 			})
@@ -140,6 +147,10 @@ chrome.runtime.onMessage.addListener((message) => {
 			background.boostTab(message.value, "togglePass", message.eqIndex)
 			break
 		case "stopBoost":
+			background.stopBoost(background.stream)
+			background.resetBoost()
+			break
+		case "reset":
 			background.stopBoost(background.stream)
 			background.resetBoost()
 			break
