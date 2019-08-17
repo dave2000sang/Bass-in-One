@@ -8,6 +8,7 @@ class Background {
 		this.lowpass = null
 		this.stream = null
 		this.isBoosted = false
+		this.tabStates = {}
 	}
 
 	initBoost(stream) {
@@ -130,12 +131,62 @@ class Background {
 		}
 		return this.lowpass
 	}
+	
+	doOpened(tabId) {
+		var storedState = this.tabStates[tabId]
+		if (storedState !== undefined) {
+			this.useBackgroundState(storedState)
+		}
+	}
+
+	saveState(tabId) {
+		var state = this.tabStates[tabId]
+		if (state == undefined) {
+			state = {}
+		}
+		state.context = this.context
+		state.tabId = this.tabId
+		state.source = this.source
+		state.biquadNodes = this.biquadNodes
+		state.lowpass = this.lowpass
+		state.stream = this.stream
+		state.isBoosted = this.isBoosted
+
+		this.tabStates[tabId] = state
+	}
+
+	useBackgroundState(background) {
+		this.context = background.context
+		this.tabId = background.tabId
+		this.source = background.source
+		this.biquadNodes = background.biquadNodes
+		this.lowpass = background.lowpass
+		this.stream = background.stream
+		this.isBoosted = background.isBoosted
+	}
+
+	getNodeValues() {
+		var nodes = this.biquadNodes
+		var nodeValues = []
+		if (nodes == undefined || nodes.length == 0) {
+			nodeValues = [0, 0, 0, 0, 0, 0, 0] 
+		} else {
+			for (var key in nodes) {
+				var node = nodes[key]
+				nodeValues.push(node.gain.value)
+			}
+		}
+		return nodeValues
+	}
 }
 
 // listener for popup events
-chrome.runtime.onMessage.addListener((message) => {
-	console.log("message: " + message.action)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	console.log("tabId = " + message.tabId)
 	background.tabId = message.tabId
+	background.saveState(background.tabId)
+	background.doOpened(message.tabId)
+
 	switch(message.action) {
 		case "toggleBoost":
 			if (background.stream !== null) {
@@ -154,9 +205,37 @@ chrome.runtime.onMessage.addListener((message) => {
 			background.stopBoost(background.stream)
 			background.resetBoost()
 			break
+		case "popup opened":
+			console.log(background)
+			// return stored biquad node values to popup
+			nodes = background.getNodeValues()
+			console.log("nodes = " + nodes)
+			sendResponse({
+				nodeValues: nodes
+			})
+			break
 		default:
 			console.log("Error message did not match")
 	}
 })
 
+// tab listeners
+chrome.tabs.onCreated.addListener(function(tab) {
+	// init tab info
+	console.log("tab created: " + tab.id.toString())
+	var tabId = tab.id.toString()
+})
+
+// remove tab state on tab deletion
+chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
+	console.log("removed tab " + tabId)
+	delete background.tabStates[tabId]
+})
+
+// // clear storage sync when window is closed
+// chrome.windows.onRemoved.addListener(function() {
+// 	chrome.storage.sync.clear()
+// })
+
+// create background instance
 const background = new Background()

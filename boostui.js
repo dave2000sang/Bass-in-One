@@ -1,16 +1,22 @@
 
 class BoostUI {
 	constructor() {
-		this.tabId = null
+		this.curTabId = null
 		this.isBoosted = false
 		this.init()
 	}
 	
+	// on opening popup
 	init() {
 	  chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
 	  	this.curTabId = tabs[0].id
-	  }.bind(this))
-
+			chrome.runtime.sendMessage(
+				{action: "popup opened", tabId: this.curTabId},
+				(response) => {
+					this.setEQValues(response.nodeValues)
+				}
+			)
+		}.bind(this))
 	  // listeners
 	  var toggleButton = document.getElementById("toggleButton")
 		var resetButton = document.getElementById("resetButton")
@@ -22,7 +28,6 @@ class BoostUI {
 		equalizers.addEventListener('change', (e) => {
 			if(e.target.className == "eq") {
 				this.boostTab(e.target.value, "shelf", e.target.id.split("eq")[1])
-				console.log(e.target)
 			}
 		})
 
@@ -102,6 +107,13 @@ class BoostUI {
 			tabId: this.curTabId
 		}
 		)
+	}
+
+	setEQValues(values) {
+		for (var i = 0; i < values.length; i++) {
+			var el = "eq" + i.toString()
+			document.getElementById(el).value = values[i]
+		}
 	}
 }
 

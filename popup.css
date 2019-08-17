@@ -1,0 +1,12 @@
+
+.eq {
+	width: 35px;
+	height: 75px;
+	-webkit-appearance: slider-vertical;
+
+}
+
+body {
+	min-width: 400px;
+	min-height: 200px;
+}
