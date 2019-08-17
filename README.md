@@ -6,3 +6,10 @@ Bass in One chrome extension
    "," to slow down
    "." to speed up
    "r" to reset play back speed
+   
+   
+CHANGELOG
+
+2019-08-17:
+ - Added popup styling
+ - Added storing tab state (remembering EQ set values when closing popup and reopening)
