@@ -35,6 +35,7 @@ class Background {
 		this.lowpass = null
 		this.stream = null
 		this.isBoosted = false
+		background.saveState(background.tabId)
 	}
 
 	boostTab(value, type, eqIndex) {
@@ -44,7 +45,6 @@ class Background {
 		} else {
 			boostFunction = this.boostPass.bind(this)
 		}
-		// console.log(boostFunction)
 		// chrome.tabs.query({ active: true }, function (tabs) {
 			chrome.tabCapture.capture({audio: true}, (response) => {
 				if (this.stream !== null) {
@@ -63,6 +63,7 @@ class Background {
 		this.initBoost(stream)
 		this.updateBiquadGain(value, eqIndex)
 		this.isBoosted = true
+		background.saveState(background.tabId)
 	}
 
 	boostPass(stream, value, eqIndex) {
@@ -78,6 +79,7 @@ class Background {
 		this.source = null
 		this.stream = null
 		this.isBoosted = false
+		background.saveState(background.tabId)
 	}
 	updateBiquadGain(gain, index) {
 		console.log(`gain = ${gain}, index = ${index}`)
@@ -135,11 +137,14 @@ class Background {
 	doOpened(tabId) {
 		var storedState = this.tabStates[tabId]
 		if (storedState !== undefined) {
+			console.log("used state")
 			this.useBackgroundState(storedState)
+			// this.printTabStore()
 		}
 	}
 
 	saveState(tabId) {
+		console.log("save state")
 		var state = this.tabStates[tabId]
 		if (state == undefined) {
 			state = {}
@@ -178,20 +183,25 @@ class Background {
 		}
 		return nodeValues
 	}
+
+	printTabStore() {
+		var tabStates = this.tabStates
+		if (tabStates !== undefined) {
+			Object.keys(tabStates).forEach((key) => {
+				var state = tabStates[key]
+				console.log(state.biquadNodes)
+			})
+		}
+	}
 }
 
 // listener for popup events
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	console.log("tabId = " + message.tabId)
 	background.tabId = message.tabId
-	background.saveState(background.tabId)
 	background.doOpened(message.tabId)
-
 	switch(message.action) {
 		case "toggleBoost":
-			if (background.stream !== null) {
-				background.boost(background.stream, message.value, message.eqIndex)
-			}
 			background.boostTab(message.value, "toggleBoost", message.eqIndex)
 			break
 		case "togglePass":
@@ -209,7 +219,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			console.log(background)
 			// return stored biquad node values to popup
 			nodes = background.getNodeValues()
-			console.log("nodes = " + nodes)
 			sendResponse({
 				nodeValues: nodes
 			})
@@ -217,6 +226,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		default:
 			console.log("Error message did not match")
 	}
+
 })
 
 // tab listeners
